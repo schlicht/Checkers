@@ -1,12 +1,12 @@
 public class CheckersGame {
 
-	static Board board = Board.getBoard();
+	static Board board = new Board(true);
 	static HumanPlayer player1 = new HumanPlayer("red", board);
-	static HumanPlayer player2 = new HumanPlayer("black", board);
-	static boolean player1Turn;
-
+	static AiPlayer player2 = new AiPlayer("black", board);
+	static boolean isGameOver = false;
 	static void nextMove() {
-		if(player1Turn) {
+		System.out.println("Next Move");
+		if(board.player1Turn) {
 			player1.move();
 		} else {
 			player2.move();
@@ -25,16 +25,19 @@ public class CheckersGame {
 		return isGameOver;
 	}
 
+	static void GameOver() {
+		board.print();
+		System.out.println("Game Over");
+	}
+
 	public static void main(String[] args) {
-		player1Turn = true;
 		board.initializeBoard();
 		do {
 			board.print();
 			nextMove();
-			player1Turn = !player1Turn;
-		} while(!isGameOver());
-		board.print();
-		System.out.println("Game Over");
-		
+			board.player1Turn = !board.player1Turn;
+			isGameOver = isGameOver();
+		} while(!isGameOver);
+		GameOver();
 	}
 }

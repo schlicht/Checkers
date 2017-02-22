@@ -1,17 +1,13 @@
+import java.util.ArrayList;
+
 public class Board {
-	private static Board instance = null;
 	Piece[][] Pieces;
-	
-	private Board() {
+	boolean player1Turn;
+	public Board(boolean player1Turn) {
 		Pieces = new Piece[8][8];
+		this.player1Turn = player1Turn;
 	}
 
-	public static Board getBoard() {
-		if(instance == null) {
-			instance = new Board();
-		}
-		return instance;
-	}
 
 	public void initializeBoard() {
 		for(int row = 0; row < 4; row++) {
@@ -27,7 +23,7 @@ public class Board {
 
 	public void print() {
 		for(int col = 7; col >= 0; col--) {
-			System.out.println(" ________________");
+			System.out.println("  ________________");
 			System.out.print(col+1);
 			for(int row = 0; row < 8; row++) {
 				System.out.print("|");
@@ -46,6 +42,7 @@ public class Board {
 	public boolean isValidMove(int[][] move, String color) {
 		if(!isOnBoard(move[0])) return false;
 		if(!isOnBoard(move[1])) return false;
+		if(Pieces[move[1][0]][move[1][1]] != null) return false;
 		Piece piece = Pieces[move[0][0]][move[0][1]];
 		if(piece == null) return false;
 		String oppColor;
@@ -62,8 +59,6 @@ public class Board {
 			if((move[1][0] == move[0][0] + 2) && (Math.abs(move[1][1] - move[0][1]) == 2) 
 				&& Pieces[move[0][0]+1][(move[0][1]+move[1][1])/2] != null 
 				&& Pieces[move[0][0]+1][(move[0][1]+move[1][1])/2].COLOR.equals(oppColor)) {
-			Pieces[move[0][0]+1][(move[0][1]+move[1][1])/2] = null;
-			CheckersGame.player1Turn = !CheckersGame.player1Turn;
 			return true;
 		}
 	}
@@ -73,8 +68,7 @@ public class Board {
 			if((move[1][0] == move[0][0] -2) && (Math.abs(move[1][1] - move[0][1]) == 2) 
 				&& Pieces[move[0][0]-1][(move[0][1]+move[1][1])/2] != null 
 				&& Pieces[move[0][0]-1][(move[0][1]+move[1][1])/2].COLOR.equals(oppColor)) {
-			Pieces[move[0][0]-1][(move[0][1]+move[1][1])/2] = null;
-			CheckersGame.player1Turn = !CheckersGame.player1Turn;
+
 			return true;
 		}
 		}
@@ -92,8 +86,13 @@ public class Board {
 	}
 
 	public void move(int[][] move) {
+		if(move == null) return;
 		Pieces[move[1][0]][move[1][1]] = Pieces[move[0][0]][move[0][1]];
 		if(move[1][0] == 0 || move[1][0] == 7) Pieces[move[1][0]][move[1][1]].promote();
+		if(Math.abs(move[0][0] - move[1][0])==2) {
+			Pieces[(move[0][0]+move[1][0])/2][(move[0][1]+move[1][1])/2] = null;
+			this.player1Turn = !this.player1Turn;
+		}
 		remove(move[0]);
 	}
 
@@ -123,16 +122,85 @@ public class Board {
 		return false;
 	}
 
-	public int score() {
-		int score = 0;
-		for(int i = 0; i < 8; i++) {
-			for(int j = 0; j < 8; j++) {
-				if(Pieces[i][j].COLOR == "red") {
-					score += 1;
-				} else if(Pieces[i][j].COLOR == "black") {
-					score -= 1;
+
+
+	public Board copy() {
+		Board b = new Board(this.player1Turn);
+		for(int row = 0; row < 8; row++) {
+			for(int col = 0; col < 8; col++) {
+				if(Pieces[row][col] != null) {
+					b.Pieces[row][col]= new Piece(this.Pieces[row][col].COLOR); 
+					b.Pieces[row][col].isKing = this.Pieces[row][col].isKing;
 				}
 			}
+		}
+		return b;
+	}
+
+	public ArrayList<int[][]> getValidMoves(String color) {
+		ArrayList<int[][]> moves = new ArrayList<int[][]>();
+		for(int row = 0; row < 8; row++) {
+			for(int col = 0; col < 8; col++) {
+				Piece piece = Pieces[row][col];
+				if(piece != null) {
+					if(piece.COLOR.equals(color)) {
+						//int[][] move;
+						for(int dist = 1; dist <=2; dist++) {
+							int[][] move1 = new int[][]{{row, col}, {row + dist, col + dist}};
+							if(this.isValidMove(move1, color)) {
+								moves.add(move1);
+							}
+							int[][] move2 = new int[][]{{row, col}, {row - dist, col + dist}};
+							if(this.isValidMove(move2, color)) {
+								moves.add(move2);
+							}
+							int[][] move3 = new int[][]{{row, col}, {row + dist, col - dist}};
+							if(this.isValidMove(move3, color)) {
+								moves.add(move3);
+							}
+							int[][] move4 = new int[][]{{row, col}, {row - dist, col - dist}};
+							if(this.isValidMove(move4, color)) {
+								moves.add(move4);
+							}
+						}
+					}
+				}
+			}
+		}
+		return moves;
+	}
+
+	final int GAMEWON = 100;
+	final int PIECE = 2;
+	final int KING = 5;
+	final int ONEDGE = 1;
+	final int ONBACKROW = 5;
+
+	public int score() {
+		int score = 0;
+		for(int row = 0; row < 8; row++) {
+			for(int col = 0; col < 8; col++) {
+				Piece piece = Pieces[row][col];
+					if(piece != null) {
+					int colorSign;
+					if(piece.COLOR == "red") {
+						colorSign = 1;
+					} else {
+						colorSign = -1;
+					}
+					score += colorSign*PIECE;
+					if(piece.isKing) score += colorSign*KING;
+					if(col == 0 || col == 8) score+= colorSign*ONEDGE;
+					if((piece.COLOR.equals("red") && row == 0) || (piece.COLOR.equals("black") && row == 8)) {
+						score += colorSign*ONBACKROW;
+					}
+				}
+			}
+		}
+		if(!areBlackPieces()) {
+			score += GAMEWON;
+		} else if(!areRedPieces()) {
+			score -= GAMEWON;
 		}
 		return score;
 	}
