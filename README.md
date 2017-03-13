@@ -1,5 +1,7 @@
 # Checkers
 
+
+
 ##Prerequisites
 Programmed in Java.
 
@@ -18,10 +20,7 @@ Input each move as numbers representing each tile separated by a space. For exam
 moves the red piece from the tile at row 3 column 1 to the tile at row 4 column 2.
 
 ## The AI
-The AI uses alpha-beta prunning to determine the next move. alpha-beta prunning is a depth first search algorithm with a 
-max depth applied to zero sum games. The algorithm prunes sections of the search space if it will not produce a greater 
-score than a previously found move. The algorithm typical square roots the search space. The score of a state is determined
-by the following heuristic:
+The AI use min-max search with alpha-beta prunning to determine the next move. min-max is a depth first search algorithm with a max depth applied to zero sum games. alpha-beta prunning removes sections of the search space if it will not produce a better score than a previously found move. The best case improvement in performace is O(\sqrt{b^d}). The score of a state is determinedby the following heuristic:
 ```
 Piece = 1
 Piece is Promoted = 1
@@ -29,5 +28,5 @@ Piece is on back row = 1
 Piece is on edge of Board = 1
 Wins the Game = 1
 ```
-The score is increase by the amounts above for red pieces and decremented for black pieces. For example, if there are 5 red 
-pieces, and 7 black pieces.
+The score is increased for red pieces and decremented for black pieces. For example, if there are 5 red 
+pieces with 1 king and 4 on the back row, and 7 black pieces with no kings, 2 on the back row, and 3 on the edges, the score of the board would be -2.
